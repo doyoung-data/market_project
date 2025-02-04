@@ -5,7 +5,7 @@ import pandas as pd
 from datetime import datetime
 
 # 데이터프레임 불러오기
-df = pd.read_excel('C:/Users/do543/market_project/market_project/all.xlsx')
+df = pd.read_excel('/path/to/your/all.xlsx')  # 실제 경로로 수정
 
 # 컬럼 이름 변경
 df.columns = ['날짜', 'sale', 'store_count', 'store_type']
@@ -36,37 +36,37 @@ def insert_data():
 
     # 마지막 삽입 날짜 이후의 데이터 필터링
     df_to_insert = df[df['날짜'] > last_insert_date]
-
+    
     if not df_to_insert.empty:
-        # 해당 날짜에 맞는 모든 데이터를 삽입
-        for _, row in df_to_insert.iterrows():
-            # DB 연결
-            db = mysql.connector.connect(
-                host='3.35.236.56',
-                port=3306,
-                user='kdy',  
-                password='0710',
-                database='crawling',
-                charset='utf8mb4'
-            )
+        row = df_to_insert.iloc[0]  # 첫 번째 데이터 (하루 데이터)
 
-            cursor = db.cursor()
+        # DB 연결
+        db = mysql.connector.connect(
+            host='3.35.236.56',
+            port=3306,
+            user='kdy',  
+            password='0710',
+            database='crawling',
+            charset='utf8mb4'
+        )
 
-            # 데이터 삽입 (id_sale은 AUTO_INCREMENT이므로 삽입하지 않음)
-            cursor.execute("""
-                INSERT INTO sale (store_type, sale, store_count, sale_date) 
-                VALUES (%s, %s, %s, %s)
-            """, (row['store_type'], row['sale'], row['store_count'], row['날짜']))
+        cursor = db.cursor()
 
-            # 커밋 및 종료
-            db.commit()
-            cursor.close()
-            db.close()
+        # 데이터 삽입 (id_sale은 AUTO_INCREMENT이므로 삽입하지 않음)
+        cursor.execute("""
+            INSERT INTO sale (store_type, sale, store_count, sale_date) 
+            VALUES (%s, %s, %s, %s)
+        """, (row['store_type'], row['sale'], row['store_count'], row['날짜']))
 
-        # 마지막 삽입 날짜 갱신 (가장 최근 날짜로 갱신)
-        update_last_insert_date(df_to_insert['날짜'].max())
+        # 커밋 및 종료
+        db.commit()
+        cursor.close()
+        db.close()
 
-        print(f"Inserted data for {df_to_insert['날짜'].max()}")  # 삽입된 날짜 출력
+        # 마지막 삽입 날짜 갱신
+        update_last_insert_date(row['날짜'])
+
+        print(f"Inserted data for {row['날짜']}")  # 삽입된 날짜 출력
     else:
         print("No new data to insert today.")  # 새로운 데이터가 없을 경우
 
