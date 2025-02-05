@@ -121,8 +121,8 @@ def scrape_events(driver, existing_titles):
 def save_data_to_db(conn, cursor, event_details):
     """ MariaDB에 크롤링 데이터를 저장 """
     insert_sql = """
-    INSERT INTO event_img (img_url, start_date, end_date, event_title, store_type)
-    VALUES (%s, %s, %s, %s, %s)
+    INSERT INTO event_img (img_url, start_date, end_date, event_title, store_type, idx)
+    VALUES (%s, %s, %s, %s, %s, 0)  -- idx 값을 항상 0으로 고정
     """
 
     if event_details:
