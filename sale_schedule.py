@@ -2,16 +2,32 @@ import time
 import mysql.connector
 import pandas as pd
 import schedule
-from datetime import datetime
+from datetime import datetime, timedelta
+import logging
+
+# 로그 설정 (로그 파일에 기록)
+logging.basicConfig(filename='/home/ubuntu/market/sale_schedule.log', 
+                    level=logging.DEBUG, 
+                    format='%(asctime)s - %(levelname)s - %(message)s')
 
 # 데이터프레임 불러오기
-df = pd.read_excel('./all.xlsx')  # 실제 경로로 수정
+try:
+    df = pd.read_excel('./all.xlsx')  # 실제 경로로 수정
+    logging.info("Data loaded successfully.")
+except Exception as e:
+    logging.error(f"Error loading data from Excel: {e}")
+    raise  # 예외 발생 시 스크립트 중지
 
 # 컬럼 이름 변경
 df.columns = ['날짜', 'sale', 'store_count', 'store_type']
 
 # 날짜 형식으로 변환 후 시간 제거 (날짜만 남기기)
-df['날짜'] = pd.to_datetime(df['날짜']).dt.date  # 시간은 제외하고 날짜만 추출
+try:
+    df['날짜'] = pd.to_datetime(df['날짜']).dt.date  # 시간은 제외하고 날짜만 추출
+    logging.info("DATE column converted to datetime format.")
+except Exception as e:
+    logging.error(f"Error converting DATE column: {e}")
+    raise  # 예외 발생 시 스크립트 중지
 
 # 마지막 삽입 날짜 파일 경로
 last_insert_file = "last_insert_date.txt"
@@ -21,30 +37,38 @@ def get_last_insert_date():
     try:
         with open(last_insert_file, "r") as f:
             last_date_str = f.read().strip()
-            return datetime.strptime(last_date_str, "%Y-%m-%d").date()
+            logging.info(f"Last insert date: {last_date_str}")
+            return datetime.strptime(last_date_str, "%Y-%m-%d").date()  # 마지막 삽입 날짜 반환
     except FileNotFoundError:
+        logging.warning("Last insert date file not found. Defaulting to 2025-01-01.")
         return datetime(2025, 1, 1).date()  # 처음 시작할 때 2025년 1월 1일부터 시작
+    except Exception as e:
+        logging.error(f"Error reading last insert date: {e}")
+        raise  # 예외 발생 시 스크립트 중지
 
 # 마지막 삽입 날짜 기록
 def update_last_insert_date(date):
-    with open(last_insert_file, "w") as f:
-        f.write(date.strftime("%Y-%m-%d"))
+    try:
+        with open(last_insert_file, "w") as f:
+            f.write(date.strftime("%Y-%m-%d"))
+        logging.info(f"Last insert date updated to: {date}")
+    except Exception as e:
+        logging.error(f"Error updating last insert date: {e}")
+        raise  # 예외 발생 시 스크립트 중지
 
-# DB 연결 함수
+# 데이터 삽입 함수
 def insert_data():
-    last_insert_date = get_last_insert_date()  # 마지막 삽입 날짜 가져오기
+    try:
+        last_insert_date = get_last_insert_date()  # 마지막 삽입 날짜 가져오기
 
-    # 마지막 삽입 날짜 이후의 데이터 필터링
-    df_to_insert = df[df['날짜'] > last_insert_date]
-    
-    if not df_to_insert.empty:
-        # 날짜별로 반복하여 데이터 삽입
-        for date in df_to_insert['날짜'].unique():
-            # 해당 날짜에 대한 데이터만 선택
-            rows = df_to_insert[df_to_insert['날짜'] == date]
+        # last_insert_date + 1일의 데이터를 가져옵니다.
+        next_day_data = df[df['날짜'] == last_insert_date + timedelta(days=1)]
 
-            for index, row in rows.iterrows():
-                # 데이터 타입 명시적으로 변환
+        # 데이터가 존재하면 삽입
+        if not next_day_data.empty:
+            # 하루에 대한 데이터만 삽입
+            for index, row in next_day_data.iterrows():
+                date_value = row['날짜']
                 sale = int(row['sale'])  # sale 값 정수로 변환
                 store_count = int(row['store_count'])  # store_count 값 정수로 변환
 
@@ -71,17 +95,26 @@ def insert_data():
                 cursor.close()
                 db.close()
 
-                # 마지막 삽입 날짜 갱신
-                update_last_insert_date(row['날짜'])
+            # 마지막 삽입 날짜 갱신
+            update_last_insert_date(next_day_data['날짜'].max())  # 마지막 삽입 날짜 갱신
 
-                print(f"Successfully inserted data for {row['날짜']} - {row['store_type']}")  # 삽입된 날짜 및 편의점 출력
-    else:
-        print("No new data to insert today.")  # 새로운 데이터가 없을 경우
+            logging.info(f"Successfully inserted data for {next_day_data['날짜'].max()}")  # 삽입된 날짜 출력
+        else:
+            logging.info(f"No new data to insert for {last_insert_date + timedelta(days=1)}.")  # 새로운 데이터가 없을 경우
+
+    except Exception as e:
+        logging.error(f"Error inserting data: {e}")
+        db.rollback()  # 오류 발생 시 롤백
+        raise  # 예외 발생 시 스크립트 중지
 
 # 매일 2시에 실행
-schedule.every().day.at("02:00").do(insert_data)
+schedule.every().day.at("11:14").do(insert_data)
 
 # 계속 실행
 while True:
-    schedule.run_pending()  # 예약된 작업 실행
-    time.sleep(60)  # 매분 확인
+    try:
+        schedule.run_pending()  # 예약된 작업 실행
+        time.sleep(60)  # 매분 확인
+    except Exception as e:
+        logging.error(f"Error in scheduler loop: {e}")
+        time.sleep(60)  # 오류 발생시에도 계속 실행되도록
