@@ -3,6 +3,9 @@ from bs4 import BeautifulSoup
 import pymysql
 import datetime
 import calendar
+import schedule
+import time
+
 
 # 스크립트 실행 함수
 def run_script():
@@ -87,13 +90,13 @@ def run_script():
     cursor.close()
     conn.close()
 
-# # 매일 자정(00:00)에 실행되도록 설정
-# schedule.every().day.at("00:00").do(run_script)
+# 매일 자정(00:00)에 실행되도록 설정
+schedule.every().day.at("13:22").do(run_script)
 
-# # 주기적으로 실행
-# while True:
-#     schedule.run_pending()  # 예약된 작업을 확인하고 실행
-#     time.sleep(60)  # 1분마다 확인 (이렇게 해야 계속 실행될 수 있어)
+# 주기적으로 실행
+while True:
+    schedule.run_pending()  # 예약된 작업을 확인하고 실행
+    time.sleep(60)  # 1분마다 확인 (이렇게 해야 계속 실행될 수 있어)
 
-# 스케줄링 없이 강제로 함수 실행
-run_script()  # 여기를 강제로 호출하면 즉시 실행
+# # 스케줄링 없이 강제로 함수 실행
+# run_script()  # 여기를 강제로 호출하면 즉시 실행
