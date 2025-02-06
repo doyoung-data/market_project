@@ -18,6 +18,11 @@ logging.basicConfig(filename='/home/ubuntu/market/seven_schedule.log',
                     level=logging.DEBUG, 
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
+# 로그 설정 (로그 파일에 기록)
+logging.basicConfig(filename='/home/ubuntu/market/CU_schedule.log', 
+                    level=logging.DEBUG, 
+                    format='%(asctime)s - %(levelname)s - %(message)s')
+
 # ✅ ChromeDriver 실행 설정 (HEADLESS 모드 활성화)
 service = Service(CHROMEDRIVER_PATH)
 options = webdriver.ChromeOptions()

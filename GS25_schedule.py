@@ -5,9 +5,15 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
+import logging
+
+# 로그 설정 (로그 파일에 기록)
+logging.basicConfig(filename='/home/ubuntu/market/CU_schedule.log', 
+                    level=logging.DEBUG, 
+                    format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Chrome WebDriver 경로 설정
-CHROMEDRIVER_PATH = r"C:\Users\user\Desktop\chromedriver-win64\chromedriver-win64\chromedriver.exe"
+CHROMEDRIVER_PATH = "/home/ubuntu/chromedriver-linux64/chromedriver"
 
 # Headless 옵션 설정
 chrome_options = Options()
@@ -140,12 +146,8 @@ def scrape_gs25_events():
 # scrape_gs25_events()
 
 # # 2️⃣ 자동 실행 (매일 밤 12시)
-schedule.every().day.at("10:40").do(scrape_gs25_events)
+schedule.every().day.at("11:30").do(scrape_gs25_events)
 
 while True:
     schedule.run_pending()
     time.sleep(60)  # 1분마다 스케줄 확인
-
-
-# 브라우저 종료
-driver.quit()
