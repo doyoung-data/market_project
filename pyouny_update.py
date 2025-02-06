@@ -162,12 +162,12 @@ def check_and_run_crawling():
             print(f"⚠️ {brand}에서 업데이트 날짜를 찾을 수 없음.")
 
 # 스케줄 설정 (매일 자정 실행)
-schedule.every().day.at("13:09").do(check_and_run_crawling)
+schedule.every().day.at("11:49").do(check_and_run_crawling)
 
 if __name__ == "__main__":
     print("🚀 크롤링 스케줄러 실행 중...")
     
     while True:
-        check_and_run_crawling()
+        # check_and_run_crawling()
         schedule.run_pending()
         time.sleep(60)  # 1분마다 확인하여 스케줄 실행
