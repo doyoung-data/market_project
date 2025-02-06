@@ -8,9 +8,15 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import re
+import logging
 
 # ✅ ChromeDriver 경로 설정
-CHROMEDRIVER_PATH = r"C:\Users\Admin\Downloads\chromedriver-win64\chromedriver-win64\chromedriver.exe"
+CHROMEDRIVER_PATH = "/home/ubuntu/chromedriver-linux64/chromedriver"
+
+# 로그 설정 (로그 파일에 기록)
+logging.basicConfig(filename='/home/ubuntu/market/seven_schedule.log', 
+                    level=logging.DEBUG, 
+                    format='%(asctime)s - %(levelname)s - %(message)s')
 
 # ✅ ChromeDriver 실행 설정 (HEADLESS 모드 활성화)
 service = Service(CHROMEDRIVER_PATH)
@@ -166,7 +172,7 @@ def run_crawling():
 schedule.every().day.at("00:00").do(run_crawling)
 
 # ✅ 스케줄 강제 실행 (테스트용) → 이 한 줄을 실행하면 바로 크롤링이 실행됨
-schedule.run_all()
+# schedule.run_all()
 
 print("✅ 자동 크롤링 스케줄러가 설정되었습니다. (매일 00:00 실행)")
 
