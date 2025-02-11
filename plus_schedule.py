@@ -5,6 +5,12 @@ from datetime import datetime
 import re
 import schedule
 import time
+import logging
+
+# 로그 설정 (로그 파일에 기록)
+logging.basicConfig(filename='/home/ubuntu/market/CU_schedule.log', 
+                    level=logging.DEBUG, 
+                    format='%(asctime)s - %(levelname)s - %(message)s')
 
 # 브랜드별 기본 URL 설정
 base_urls = {
