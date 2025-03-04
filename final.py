@@ -144,8 +144,8 @@ def format_prediction_message(convenience_store, date_to_predict, predicted_valu
     return message
 
 # 🟦 Slack API Token 설정
-slack_token = "xoxb"
-slack_app_token = "xapp"
+slack_token = "xoxb---"
+slack_app_token = "xapp-1---"
 client = WebClient(token=slack_token)
 
 # 🟦 MySQL 연결 설정
@@ -213,8 +213,8 @@ def get_news_links_by_date_and_store(date, store_type):
     return [row["news_url"] for row in data] if data else []
 
 
-# 🟦 백테스트 시작 날짜 (2024년 10월 24일부터 시작)
-simulation_date = datetime(2024, 10, 23)
+# 🟦 백테스트 시작 날짜 (2024년 10월 1일부터 시작)
+simulation_date = datetime(2024, 10, 1)
 
 def format_news_links(news_links, date, store_type):
     """처음 3개 뉴스 링크만 출력하고, 더보기 버튼을 추가하는 함수"""
@@ -224,7 +224,7 @@ def format_news_links(news_links, date, store_type):
     top_news = "\n".join(news_links[:3])  # 처음 3개를 문자열로 변환
     more_news = news_links[3:]  # 나머지 뉴스 링크는 더보기 버튼을 통해 출력
 
-    message = f"📰 관련 뉴스:\n{top_news}"
+    message = f"📰 {date} {store_type} 관련 뉴스: 🎬\n" + top_news
     
     # 더보기 버튼 추가
     attachments = None
@@ -248,49 +248,15 @@ def format_news_links(news_links, date, store_type):
         ]
     return message, attachments
 
-
 def format_ytb_links(ytb_links, date, store_type):
     """처음 3개 유튜브 링크만 출력하고, 더보기 버튼을 추가하는 함수"""
     if not ytb_links:
         return "🎬 관련 유튜브 영상이 없습니다.", None
 
-    top_ytb = "\n".join(ytb_links[:3])  # 리스트 → 문자열 변환
+    top_ytb = "\n".join(ytb_links[:3])  # 처음 3개만 출력
     more_ytb = ytb_links[3:]  # 나머지 유튜브 링크는 더보기 버튼을 통해 출력
 
-    message = f"🎬 관련 유튜브 영상:\n{top_ytb}"
-    
-    # 더보기 버튼 추가
-    attachments = None
-    if more_ytb:
-        attachments = [
-            {
-                "blocks": [
-                    {
-                        "type": "actions",
-                        "elements": [
-                            {
-                                "type": "button",
-                                "text": {"type": "plain_text", "text": "유튜브 더보기"},
-                                "action_id": "show_more_ytb",
-                                "value": f"{date}|{store_type}"
-                            }
-                        ]
-                    }
-                ]
-            }
-        ]
-    return message, attachments
-
-
-def format_ytb_links(ytb_links, date, store_type):
-    """처음 3개 유튜브 링크만 출력하고, 더보기 버튼을 추가하는 함수"""
-    if not ytb_links:
-        return "🎬 관련 유튜브 영상이 없습니다.", None
-
-    top_ytb = ytb_links[:3]  # 처음 3개만 출력
-    more_ytb = ytb_links[3:]  # 나머지 유튜브 링크는 더보기 버튼을 통해 출력
-
-    message = "🎬 관련 유튜브 영상:\n" + "\n".join(top_ytb)
+    message = f"🎬 {date} {store_type} 유튜브 영상 목록 🎬\n" + top_ytb
     
     # 더보기 버튼 추가
     attachments = None
@@ -374,6 +340,8 @@ def detect_sales_anomalies():
                     f"{ytb_message}\n\n"
                     f"{news_message}\n"
                 )
+                print(f"📨 [DEBUG] 메시지 내용: {msg}")
+                print(f"📎 [DEBUG] 첨부 파일: {(ytb_attachments if ytb_attachments else []) + (news_attachments if news_attachments else [])}")
 
                 client.chat_postMessage(
                     channel=ALERT_CHANNEL_ID,
@@ -423,11 +391,11 @@ def handle_mention(event, say, client):
 
     # 🔹 "대시보드" 명령어 처리
     if text == "대시보드" and channel_id == "C08E48KQWET":
-        say(f"📊 태블로 대시보드 링크입니다: https://public.tableau.com/app/profile/.70256853/viz/_17404727845250/sheet6")
+        say(f"📊 태블로 대시보드 링크입니다: https://public.tableau.com/app/profile/.70256853/viz/shared/497MCJW64")
         return
 
     if text == "티피" and channel_id == "C08E48KQWET":
-        say(f"📊 태블로 TP 링크입니다: https://public.tableau.com/app/profile/.70256853/viz/_17404727845250/3store_TP")
+        say(f"📊 태블로 TP 링크입니다: https://public.tableau.com/app/profile/.70256853/viz/_17404727845250/3store_TP?publish=yes")
         return
 
     # 🔹 입력에서 날짜 및 편의점 종류 추출
@@ -437,9 +405,9 @@ def handle_mention(event, say, client):
     # 🔹 만약 사용자가 아무것도 입력하지 않았다면
     if not date_match and not store_match:
         if channel_id in store_mapping:
-            say("⚠️ 사용법: `@편의점 알리미 GS25 2024-10-02` 형식으로 입력해주세요.")
+            say("⚠️ 사용법: `@브니 GS25 2024-10-02` 형식으로 입력해주세요.")
         elif channel_id in [YOUTUBE_CHANNEL_ID, NAVER_NEWS_CHANNEL_ID]:
-            say("⚠️ 사용법: `@편의점 알리미 GS25 2024-10-02` 형식으로 입력해주세요.")
+            say("⚠️ 사용법: `@브니 GS25 2024-10-02` 형식으로 입력해주세요.")
         return
 
     # 🔹 날짜와 편의점 종류 추출
@@ -473,7 +441,7 @@ def handle_mention(event, say, client):
             except Exception as e:
                 say(f"⚠️ 매출 예측 중 오류 발생: {e}")
         else:
-            say("⚠️ 사용법: `@편의점 알리미 GS25 2024-10-02` 형식으로 입력해주세요.")
+            say("⚠️ 사용법: `@브니 GS25 2024-10-02` 형식으로 입력해주세요.")
 
     # 🔹 채널이 올바른 경우 기존 매출 데이터 조회
     if channel_id in store_mapping:
@@ -492,23 +460,24 @@ def handle_mention(event, say, client):
             else:
                 say(f"⚠️ {date}에 대한 {store_type} 매출 데이터가 없습니다.")
         else:
-            say("⚠️ 사용법: `@편의점 알리미 2024-10-02` 형식으로 입력해주세요.")
+            say("⚠️ 사용법: `@브니 2024-10-02` 형식으로 입력해주세요.")
 
     # 🔹 유튜브 검색 채널에서 실행
     elif channel_id == YOUTUBE_CHANNEL_ID:
-        result = get_ytb_links_by_date_and_store(date, store_type)
-        if result:
-            message = f"🎬 {date} {store_type} 유튜브 영상 목록 🎬\n" + "\n".join(result[:3])
-            say(message)
+        ytb_links = get_ytb_links_by_date_and_store(date, store_type)
+        message, attachments = format_ytb_links(ytb_links, date, store_type)
+        if ytb_links:
+            say(message,attachments=attachments)
         else:
             say(f"⚠️ {date}에 대한 {store_type} 유튜브 영상이 없습니다.")
 
     # 🔹 네이버 뉴스 검색 채널에서 실행
     elif channel_id == NAVER_NEWS_CHANNEL_ID:
-        result = get_news_links_by_date_and_store(date, store_type)
-        if result:
-            message = f"📰 {date} {store_type} 네이버 뉴스 기사 목록 📰\n" + "\n".join(result[:3])
-            say(message)
+        news_links = get_news_links_by_date_and_store(date, store_type)
+        message, attachments = format_news_links(news_links, date, store_type)
+
+        if news_links:
+            say(message,attachments=attachments)
         else:
             say(f"⚠️ {date}에 대한 {store_type} 네이버 뉴스가 없습니다.")
 
